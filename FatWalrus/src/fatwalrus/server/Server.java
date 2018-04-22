@@ -6,6 +6,7 @@
 package fatwalrus.server;
 
 import fatwalrus.commands.CommandExecutor;
+import fatwalrus.commands.CommandRegistry;
 import fatwalrus.encryption.Decryptor;
 import fatwalrus.network.ClientConnection;
 import fatwalrus.network.ServerSocketListener;
@@ -146,6 +147,18 @@ public class Server implements Runnable {
     
     public int getTimeout() {
         return timeout;
+    }
+    
+    public void registerServerCommands(CommandRegistry commandRegistry) {
+        executor.registerCommands(commandRegistry);
+    }
+    
+    public void registerClientCommands(CommandRegistry commandRegistry) {
+        
+        connections.entrySet().forEach((cc) -> {
+            cc.getValue().registerCommands(commandRegistry);
+        });
+        
     }
    
 }

@@ -7,6 +7,7 @@ package fatwalrus.network;
 
 import fatwalrus.commands.ClientConnectionCommandRegistry;
 import fatwalrus.commands.CommandExecutor;
+import fatwalrus.commands.CommandRegistry;
 import java.net.DatagramSocket;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -43,6 +44,10 @@ public class ClientConnection implements Runnable {
         this.privateKey = privateKey;
         id              = ip.toString() + ":" + port;
         executor.registerCommands(new ClientConnectionCommandRegistry(this));
+    }
+    
+    public void registerCommands(CommandRegistry commandRegistry) {
+        executor.registerCommands(commandRegistry);
     }
     
     @Override public void run() {

@@ -36,7 +36,15 @@ public class CommandExecutor {
     public void registerCommands(CommandRegistry cr) {
         
         cr.getCommands().forEach((command) -> {
-            commands.put(command, cr);
+            
+            if (commands.containsKey(command)) {
+                System.out.println("ERROR: Could not register command: " + command + " Already exists!");
+            } 
+            
+            else {
+                commands.put(command, cr);
+            }
+            
         });
         
     }
