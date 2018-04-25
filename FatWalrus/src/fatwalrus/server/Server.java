@@ -11,7 +11,7 @@ import fatwalrus.encryption.Decryptor;
 import fatwalrus.network.ClientConnection;
 import fatwalrus.network.ServerSocketListener;
 import fatwalrus.encryption.KeyGenerator;
-import fatwalrus.network.ConnectionChecker;
+import fatwalrus.network.ConnectionHandler;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,10 +33,10 @@ public class Server implements Runnable {
     private final Semaphore            recLock   = new Semaphore(1);
     private final ArrayList<byte[]>    recQueue  = new ArrayList();
     private final CommandExecutor      executor  = new CommandExecutor();
-    private boolean                    isStopped = true;
+    private boolean                    isRunning = false;
     private final DatagramSocket       socket;
     private final ServerSocketListener sl;
-    private final ConnectionChecker    cl;
+    private final ConnectionHandler    cl;
     private int                        timeout  = 30;
     
     private final HashMap<String, ClientConnection> connections = new HashMap();
@@ -47,8 +47,8 @@ public class Server implements Runnable {
         
         kg.createKeys();
         socket = new DatagramSocket(port);
-        sl     = new ServerSocketListener(socket, connections, kg, conLock);
-        cl     = new ConnectionChecker(connections, conLock, timeout);
+        sl     = new ServerSocketListener(this, connections, kg, conLock);
+        cl     = new ConnectionHandler(connections, conLock, timeout);
         
     }
     
@@ -56,6 +56,8 @@ public class Server implements Runnable {
         
         System.out.println("Starting Server...");
 
+        isRunning = true;
+        
         Thread lt = new Thread(sl);
         Thread ct = new Thread(cl);
         
@@ -66,20 +68,47 @@ public class Server implements Runnable {
     
     public void stop() {
         
-        isStopped = false;
-        
-        connections.entrySet().forEach((cc) -> {
-            cc.getValue().sendMessage("KICK".getBytes());
-            cc.getValue().stop();
-        });
-        
+        System.out.println("Stopping Server...");
+        broadcastMessage("KICK");
         try {Thread.sleep(1000);} catch(InterruptedException e){}
-        
         sl.stop();
         cl.stop();
         socket.close();
+        isRunning = false;
         
     }
+    
+    public void sendMessage(String clientID, String message) {
+        
+        try {
+            
+            conLock.acquire();
+            connections.get(clientID).sendMessage(message.getBytes());
+            conLock.release();
+            
+        }
+        
+        catch (InterruptedException e) {
+            conLock.release();
+        }
+        
+    }
+    
+    public void broadcastMessage(String message) {
+        
+        try {
+            conLock.acquire();
+            connections.entrySet().forEach((cc) -> {
+                cc.getValue().sendMessage(message.getBytes());
+                cc.getValue().stop();
+            });
+            conLock.release();
+        }
+        catch (InterruptedException e) {
+            conLock.release();
+        }
+        
+    }     
     
     @Override
     public void run() {
@@ -102,7 +131,7 @@ public class Server implements Runnable {
         
         catch (Exception e) {
             recLock.release();
-            if (!isStopped) e.printStackTrace();
+            if (isRunning) e.printStackTrace();
         }
         
         new Thread(this).start();
@@ -141,14 +170,6 @@ public class Server implements Runnable {
         
     }
     
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
-    }
-    
-    public int getTimeout() {
-        return timeout;
-    }
-    
     public void registerServerCommands(CommandRegistry commandRegistry) {
         executor.registerCommands(commandRegistry);
     }
@@ -160,5 +181,29 @@ public class Server implements Runnable {
         });
         
     }
+    
+    public void onClientConnected(ClientConnection cc) {}
+    
+    public void onClientDisconnected(ClientConnection cc, String reason) {}    
+    
+    public DatagramSocket getSocket() {
+        return socket;
+    }
+    
+    public boolean isRunning() {
+        return isRunning;
+    }
+    
+    public HashMap getConnections() {
+        return connections;
+    }
+    
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+    
+    public int getTimeout() {
+        return timeout;
+    }    
    
 }

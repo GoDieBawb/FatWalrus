@@ -8,7 +8,6 @@ package fatwalrus.network;
 import fatwalrus.commands.ClientConnectionCommandRegistry;
 import fatwalrus.commands.CommandExecutor;
 import fatwalrus.commands.CommandRegistry;
-import java.net.DatagramSocket;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
@@ -26,7 +25,8 @@ import java.security.spec.X509EncodedKeySpec;
  * @author Bob
  */
 public class ClientConnection implements Runnable {
-     
+    
+    private final Server             server;
     private final ArrayList<byte[]>  recQueue  = new ArrayList();
     private final Semaphore          recLock   = new Semaphore(1);
     private final CommandExecutor    executor  = new CommandExecutor();
@@ -39,8 +39,9 @@ public class ClientConnection implements Runnable {
     private int                      timeWarn;
     private boolean                  hasDisconnected;
     
-    public ClientConnection(DatagramSocket socket, InetAddress ip, int port, PrivateKey privateKey) {
-        sw              = new SocketWriter(socket, ip, port);
+    public ClientConnection(Server server, InetAddress ip, int port, PrivateKey privateKey) {
+        this.server     = server;
+        sw              = new SocketWriter(server.getSocket(), ip, port);
         this.privateKey = privateKey;
         id              = ip.toString() + ":" + port;
         executor.registerCommands(new ClientConnectionCommandRegistry(this));
@@ -217,6 +218,7 @@ public class ClientConnection implements Runnable {
     public void establishConnection() {
         
         connectionEstablished = true;
+        server.onClientConnected(this);
         
         if (Server.IS_ENCRYPTED)
             System.out.println("ENCRYPTED CONNECTION ESTABLISHED");
@@ -229,8 +231,10 @@ public class ClientConnection implements Runnable {
         return connectionEstablished;
     }
     
-    public void disconnect() {
+    public void disconnect(String reason) {
         hasDisconnected = true;
+        server.onClientDisconnected(this, reason);
+        sw.stop();
     }
     
     public boolean hasDisconnected() {

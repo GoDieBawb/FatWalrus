@@ -37,13 +37,13 @@ public class Client implements Runnable {
     private final Semaphore            recLock   = new Semaphore(1);
     private final ArrayList<byte[]>    recQueue  = new ArrayList();
     private final CommandExecutor      executor  = new CommandExecutor();
-    private       boolean              isStopped;
     private       boolean              connectionEstablished;
     private       PublicKey            serverPublicKey;
     private final ClientSocketListener sl;
     private final SocketWriter         sw;
     private       String               handshake;
     private final String               id;
+    private       boolean              isRunning = false;
     
     public Client(String ip, int port, boolean isEncrypted) throws Exception {
         
@@ -63,6 +63,8 @@ public class Client implements Runnable {
     
     public void start() throws Exception {
       
+        isRunning = true;
+        
         Thread lt = new Thread(sl);
         Thread ct = new Thread(this);
         
@@ -87,7 +89,10 @@ public class Client implements Runnable {
         sl.stop();
         sw.stop();
         socket.close();
-        isStopped = true;
+        
+        isRunning = false;
+        
+        onDisconnect();
         
     }
     
@@ -113,7 +118,7 @@ public class Client implements Runnable {
         }
         
         catch(Exception e) {
-            if (!isStopped) e.printStackTrace();
+            if (isRunning) e.printStackTrace();
         }
         
     }
@@ -146,6 +151,7 @@ public class Client implements Runnable {
                 serverPublicKey = receivePublicKey(received);
                 connectionEstablished = true;
                 sendMessage("CONFIRM".getBytes());
+                onConnect();
             }
 
         }
@@ -156,6 +162,7 @@ public class Client implements Runnable {
                 System.out.println("CONNECTION ESTABLISHED");
                 connectionEstablished = true;
                 sendMessage("CONFIRM".getBytes());
+                onConnect();
             }
 
         }
@@ -194,7 +201,7 @@ public class Client implements Runnable {
         
         catch (Exception e) {
             recLock.release();
-            if (!isStopped) e.printStackTrace();
+            if (isRunning) e.printStackTrace();
         }
         
         new Thread(this).start();
@@ -215,7 +222,7 @@ public class Client implements Runnable {
         }
         
         catch(Exception e) {
-            if (!isStopped) e.printStackTrace();
+            if (isRunning) e.printStackTrace();
         }
         
         return message;
@@ -267,8 +274,18 @@ public class Client implements Runnable {
         sw.write(sendData);
     }
     
-    public boolean isStopped() {
-        return isStopped;
+    public void onConnect() {
+    }
+    
+    public void onDisconnect() {
+    }
+    
+    public String getID() {
+        return id;
+    }
+    
+    public boolean isRunning() {
+        return isRunning;
     }
    
 }

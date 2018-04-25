@@ -22,15 +22,17 @@ import java.util.concurrent.Semaphore;
  */
 public class ServerSocketListener implements Runnable {
     
+    private final Server             server;
     private final DatagramSocket     socket;
+    private final PublicKey          publicKey;
+    private final PrivateKey         privateKey;
+    private final Semaphore          conLock;
     private final HashMap<String, ClientConnection> connections;
-    private final PublicKey  publicKey;
-    private final PrivateKey privateKey;
-    private final Semaphore  conLock;
     private boolean go = true;
     
-    public ServerSocketListener(DatagramSocket socket, HashMap<String, ClientConnection> connections, KeyGenerator kg, Semaphore conLock) {
-        this.socket       = socket;
+    public ServerSocketListener(Server server, HashMap<String, ClientConnection> connections, KeyGenerator kg, Semaphore conLock) {
+        this.server       = server;
+        this.socket       = server.getSocket();
         this.connections  = connections;
         this.publicKey    = kg.getPublicKey();
         this.privateKey   = kg.getPrivateKey();
@@ -76,7 +78,7 @@ public class ServerSocketListener implements Runnable {
                     
                     if (port == -1) continue;
                     
-                    cc = new ClientConnection(socket, ip, port, privateKey);
+                    cc = new ClientConnection(server, ip, port, privateKey);
                     if (Server.IS_ENCRYPTED)
                         cc.sendMessage(publicKey.getEncoded());
                     connections.put(key, cc);

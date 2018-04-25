@@ -28,7 +28,7 @@ public class TestClient {
         
         String in = "";
         
-        while (!in.equals("q") && !client.isStopped()) {
+        while (!in.equals("q") && client.isRunning()) {
             //in = new Scanner(System.in).nextLine();
             //if (in.equals("q")) continue;
             //client.sendMessage(in.getBytes());
