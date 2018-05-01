@@ -39,6 +39,7 @@ public class SocketWriter implements Runnable {
         }
         catch (InterruptedException e) {
             lock.release();
+            e.printStackTrace();
         }
         new Thread(this).start();
     }
@@ -57,6 +58,8 @@ public class SocketWriter implements Runnable {
         }
         
         catch(Exception e) {
+            lock.release();
+            e.printStackTrace();
         }
         
         return message;

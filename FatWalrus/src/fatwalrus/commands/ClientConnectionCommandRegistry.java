@@ -34,7 +34,6 @@ public class ClientConnectionCommandRegistry extends CommandRegistry {
         switch(command) {
             
             case "DISCONNECT":
-                System.out.println("Client: " + cc.getId() + " Disconnected!");
                 cc.disconnect("Leaving");
                 break;
             case "CHECKTIME":

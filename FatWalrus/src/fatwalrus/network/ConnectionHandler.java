@@ -35,7 +35,9 @@ public class ConnectionHandler implements Runnable {
         
         while (go) {
             checkConnections();
-            try {Thread.sleep(1000);} catch(InterruptedException e){}
+            try {Thread.sleep(1000);} catch(InterruptedException e){
+                e.printStackTrace();
+            }
         }
         
     }
@@ -45,8 +47,7 @@ public class ConnectionHandler implements Runnable {
         try {
             
             conLock.acquire();
-
-            ArrayList<String> removes = new ArrayList();
+            ArrayList<ClientConnection> removes = new ArrayList();
 
             connections.entrySet().forEach((cc) -> {
 
@@ -55,24 +56,22 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 if (cc.getValue().hasDisconnected()) {
-                    removes.add(cc.getKey());
+                    removes.add(cc.getValue());
                 }
 
             });
 
-            removes.forEach((key) -> {
-                connections.remove(key);
+            removes.forEach((cc) -> {
+                connections.remove(cc.getId());
             });
-
-            conLock.release();
             
         }
         
         catch(InterruptedException e) {
             e.printStackTrace();
-            conLock.release();
         }
         
+        conLock.release();
         
     }
 

@@ -5,6 +5,7 @@
  */
 package fatwalrus.tests;
 
+import fatwalrus.network.ClientConnection;
 import fatwalrus.server.Server;
 import java.util.Scanner;
 
@@ -16,7 +17,13 @@ public class TestServer {
     
     public static void main(String args[]) throws Exception {
         
-        Server server = new Server(9876, true);
+        Server server = new Server(9876, true) {
+        
+            @Override
+            public void onClientDisconnected(ClientConnection cc, String reason) {
+                System.out.println(cc.getId() + " Has Disconntected: " + reason);
+            }
+        };
         server.start();
         
         String in = "";

@@ -7,7 +7,6 @@ package fatwalrus.tests;
 
 import fatwalrus.client.Client;
 import java.util.Random;
-import java.util.Scanner;
 
 /**
  *

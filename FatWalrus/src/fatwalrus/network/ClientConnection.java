@@ -38,6 +38,7 @@ public class ClientConnection implements Runnable {
     private long                     lastConnect;
     private int                      timeWarn;
     private boolean                  hasDisconnected;
+    private String                   disconnectReason;
     
     public ClientConnection(Server server, InetAddress ip, int port, PrivateKey privateKey) {
         this.server     = server;
@@ -232,15 +233,15 @@ public class ClientConnection implements Runnable {
     }
     
     public void disconnect(String reason) {
-        hasDisconnected = true;
-        server.onClientDisconnected(this, reason);
         sw.stop();
+        disconnectReason = reason;  
+        hasDisconnected  = true;      
+        server.onClientDisconnected(this, disconnectReason);
     }
     
     public boolean hasDisconnected() {
         return hasDisconnected;
     }
-    
     private PublicKey receivePublicKey(byte[] keyBytes) {
         
         try {

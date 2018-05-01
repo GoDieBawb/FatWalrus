@@ -21,6 +21,9 @@ public class CommandExecutor {
     
     public void Execute(String commandString) {
         
+        if (commandString.equals(""))
+            return;
+        
         String command = commandString.split("_")[0];
         
         if (commands.containsKey(command)) {

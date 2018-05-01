@@ -9,6 +9,7 @@ import fatwalrus.commands.ClientCommandRegistry;
 import fatwalrus.network.SocketWriter;
 import fatwalrus.network.ClientSocketListener;
 import fatwalrus.commands.CommandExecutor;
+import fatwalrus.commands.CommandRegistry;
 import fatwalrus.encryption.Decryptor;
 import fatwalrus.encryption.Encryptor;
 import fatwalrus.encryption.KeyGenerator;
@@ -49,8 +50,6 @@ public class Client implements Runnable {
         
         IS_ENCRYPTED = isEncrypted;
         
-        System.out.println("Starting Client...");
-        
         executor.registerCommands(new ClientCommandRegistry(this));
         
         kg.createKeys();        
@@ -63,6 +62,7 @@ public class Client implements Runnable {
     
     public void start() throws Exception {
       
+        System.out.println("Starting Client on address: " + id + "...");
         isRunning = true;
         
         Thread lt = new Thread(sl);
@@ -75,6 +75,7 @@ public class Client implements Runnable {
     
     public void stop() {
         
+        System.out.println("Stopping Client...");
         sendMessage("DISCONNECT".getBytes());
         
         try {
@@ -288,4 +289,8 @@ public class Client implements Runnable {
         return isRunning;
     }
    
+    public void RegisterCommands(CommandRegistry cr) {
+        executor.registerCommands(cr);
+    }
+    
 }

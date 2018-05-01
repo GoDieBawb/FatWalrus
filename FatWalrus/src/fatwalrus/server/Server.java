@@ -7,7 +7,7 @@ package fatwalrus.server;
 
 import fatwalrus.commands.CommandExecutor;
 import fatwalrus.commands.CommandRegistry;
-import fatwalrus.encryption.Decryptor;
+import fatwalrus.commands.ServerCommandRegistry;
 import fatwalrus.network.ClientConnection;
 import fatwalrus.network.ServerSocketListener;
 import fatwalrus.encryption.KeyGenerator;
@@ -37,7 +37,8 @@ public class Server implements Runnable {
     private final DatagramSocket       socket;
     private final ServerSocketListener sl;
     private final ConnectionHandler    cl;
-    private int                        timeout  = 30;
+    private final int                  port;
+    private int                        timeout  = 10;
     
     private final HashMap<String, ClientConnection> connections = new HashMap();
     
@@ -46,15 +47,17 @@ public class Server implements Runnable {
         IS_ENCRYPTED = isEncrypted;
         
         kg.createKeys();
-        socket = new DatagramSocket(port);
-        sl     = new ServerSocketListener(this, connections, kg, conLock);
-        cl     = new ConnectionHandler(connections, conLock, timeout);
+        this.port = port;
+        socket    = new DatagramSocket(port);
+        sl        = new ServerSocketListener(this, connections, kg, conLock);
+        cl        = new ConnectionHandler(connections, conLock, timeout);
+        executor.registerCommands(new ServerCommandRegistry(this));
         
     }
     
     public void start() {
         
-        System.out.println("Starting Server...");
+        System.out.println("Starting Server on port " + port + "...");
 
         isRunning = true;
         
@@ -69,45 +72,38 @@ public class Server implements Runnable {
     public void stop() {
         
         System.out.println("Stopping Server...");
+        
         broadcastMessage("KICK");
-        try {Thread.sleep(1000);} catch(InterruptedException e){}
+
+        try {
+            Thread.sleep(1000);
+        } 
+        catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+        
         sl.stop();
         cl.stop();
+        
+         
         socket.close();
         isRunning = false;
+        System.out.println("Stopped");
         
+    }
+    
+    public void runCommand(String command) {
+        addToReceived(command.getBytes());
     }
     
     public void sendMessage(String clientID, String message) {
-        
-        try {
-            
-            conLock.acquire();
-            connections.get(clientID).sendMessage(message.getBytes());
-            conLock.release();
-            
-        }
-        
-        catch (InterruptedException e) {
-            conLock.release();
-        }
-        
+        String command = "SEND_" + clientID + "_" + message;
+        addToReceived(command.getBytes());
     }
     
     public void broadcastMessage(String message) {
-        
-        try {
-            conLock.acquire();
-            connections.entrySet().forEach((cc) -> {
-                cc.getValue().sendMessage(message.getBytes());
-                cc.getValue().stop();
-            });
-            conLock.release();
-        }
-        catch (InterruptedException e) {
-            conLock.release();
-        }
-        
+        String command = "BRDCST_" + message;
+        addToReceived(command.getBytes());
     }     
     
     @Override
@@ -115,28 +111,20 @@ public class Server implements Runnable {
         checkReceived();
     }
     
-    public void receiveMessage(byte[] message) {
-        
+    private void addToReceived(byte[] message) {
         try {
-            
             recLock.acquire();
-
-            if (IS_ENCRYPTED)
-                message = new Decryptor().decryptText(new String(message), kg.getPrivateKey()).getBytes();
-
             recQueue.add(message);
-            recLock.release();
-            
         }
-        
+                
         catch (Exception e) {
-            recLock.release();
             if (isRunning) e.printStackTrace();
         }
         
+        recLock.release();
         new Thread(this).start();
         
-    }     
+    }
     
     private void checkReceived() {
         
@@ -172,12 +160,14 @@ public class Server implements Runnable {
     
     public void registerServerCommands(CommandRegistry commandRegistry) {
         executor.registerCommands(commandRegistry);
+        onServerCommandsRegistered(commandRegistry);
     }
     
     public void registerClientCommands(CommandRegistry commandRegistry) {
         
         connections.entrySet().forEach((cc) -> {
             cc.getValue().registerCommands(commandRegistry);
+            onClientConnectionCommandsRegistered(cc.getValue(), commandRegistry);
         });
         
     }
@@ -185,6 +175,10 @@ public class Server implements Runnable {
     public void onClientConnected(ClientConnection cc) {}
     
     public void onClientDisconnected(ClientConnection cc, String reason) {}    
+    
+    public void onClientConnectionCommandsRegistered(ClientConnection cc, CommandRegistry cr) {}
+    
+    public void onServerCommandsRegistered(CommandRegistry cr) {}
     
     public DatagramSocket getSocket() {
         return socket;
@@ -194,8 +188,12 @@ public class Server implements Runnable {
         return isRunning;
     }
     
-    public HashMap getConnections() {
+    public HashMap<String, ClientConnection> getConnections() {
         return connections;
+    }
+    
+    public Semaphore getConLock() {
+        return conLock;
     }
     
     public void setTimeout(int timeout) {
