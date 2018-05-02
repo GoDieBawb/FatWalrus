@@ -99,28 +99,12 @@ public class Client implements Runnable {
     
     @Override
     public void run() {
-        
-        try {
 
-            checkReceived();
-
-            if (!connectionEstablished) {
-
-                if (IS_ENCRYPTED) {
-                    sendPublicKey();
-                }
-
-                else {
-                    sendHandshake();
-                }
-
-            }
+        if (!connectionEstablished) {
+            attemptConnection();
+        }
+        checkReceived();
             
-        }
-        
-        catch(Exception e) {
-            if (isRunning) e.printStackTrace();
-        }
         
     }
     
@@ -131,7 +115,7 @@ public class Client implements Runnable {
         if (received == null) return;
         
         if (!connectionEstablished) {
-            attemptConnection(received);
+            attemptEstablish(received);
         }
         
         else {
@@ -143,7 +127,47 @@ public class Client implements Runnable {
         
     }
     
-    private void attemptConnection(byte[] received) {
+    private void attemptConnection() {
+        
+        int attempts = 0;
+
+        while (!connectionEstablished && isRunning) {
+
+            try {
+                
+                if (IS_ENCRYPTED) {
+                    sendPublicKey();
+                }
+
+                else {
+                    sendHandshake();
+                }
+
+                attempts++;
+
+                if (attempts > 5) {
+                    System.out.println("Connection Failed!");
+                    stop();
+                    onConnectFailed();
+                    return;
+                }
+
+                checkReceived();
+
+
+                Thread.sleep(500);
+                
+            }
+
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        
+    }
+    
+    private void attemptEstablish(byte[] received) {
         
         if (IS_ENCRYPTED) {
 
@@ -196,14 +220,14 @@ public class Client implements Runnable {
                 message = new Decryptor().decryptText(new String(message), kg.getPrivateKey()).getBytes();
 
             recQueue.add(message);
-            recLock.release();
             
         }
         
         catch (Exception e) {
-            recLock.release();
             if (isRunning) e.printStackTrace();
         }
+        
+        recLock.release();
         
         new Thread(this).start();
         
@@ -279,6 +303,12 @@ public class Client implements Runnable {
     }
     
     public void onDisconnect() {
+    }
+    
+    public void onConnectFailed() {
+    }
+    
+    public void onServerStop() {
     }
     
     public String getID() {

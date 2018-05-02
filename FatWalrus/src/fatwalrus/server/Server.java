@@ -73,7 +73,7 @@ public class Server implements Runnable {
         
         System.out.println("Stopping Server...");
         
-        broadcastMessage("KICK");
+        broadcastMessage("SRVSTP");
 
         try {
             Thread.sleep(1000);

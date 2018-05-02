@@ -28,9 +28,6 @@ public class TestClient {
         String in = "";
         
         while (!in.equals("q") && client.isRunning()) {
-            //in = new Scanner(System.in).nextLine();
-            //if (in.equals("q")) continue;
-            //client.sendMessage(in.getBytes());
             int del = new Random().nextInt((10 - 0) + 1) + 0;
             client.sendMessage("PING".getBytes());
             client.sendMessage("ECHO_testing this".getBytes());
@@ -40,7 +37,6 @@ public class TestClient {
             if (dis==999) break;
         }
                 
-        client.stop();
         System.out.println("Good Bye!"); 
         
     }

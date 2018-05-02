@@ -20,7 +20,7 @@ public class ClientCommandRegistry extends CommandRegistry {
         commands.add("PONG");
         commands.add("ECHO");
         commands.add("TIMECHECK");
-        commands.add("KICK");
+        commands.add("SRVSTP");
         this.client = client;
     }
     
@@ -42,9 +42,10 @@ public class ClientCommandRegistry extends CommandRegistry {
             case "TIMECHECK":
                 client.sendMessage("CHECKTIME".getBytes());
                 break;
-            case "KICK":
-                System.out.println("Client has been kicked...");
+            case "SRVSTP":
+                System.out.println("Server is stopping...");
                 client.stop();
+                client.onServerStop();
                 break;
             default:
                 System.out.println("ERROR: Improperly Registered Command: " + command);
