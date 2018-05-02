@@ -20,7 +20,7 @@ public class ConnectionHandler implements Runnable {
     private final int                               timeout;
     private boolean go = true;
     
-    public ConnectionHandler(HashMap connections, Semaphore conLock, int timeout) {
+    public ConnectionHandler(HashMap<String, ClientConnection> connections, Semaphore conLock, int timeout) {
         this.connections = connections;
         this.conLock     = conLock;
         this.timeout     = timeout;
@@ -47,7 +47,7 @@ public class ConnectionHandler implements Runnable {
         try {
             
             conLock.acquire();
-            ArrayList<ClientConnection> removes = new ArrayList();
+            ArrayList<ClientConnection> removes = new ArrayList<>();
 
             connections.entrySet().forEach((cc) -> {
 

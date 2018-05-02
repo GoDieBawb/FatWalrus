@@ -13,6 +13,7 @@ import fatwalrus.commands.CommandRegistry;
 import fatwalrus.encryption.Decryptor;
 import fatwalrus.encryption.Encryptor;
 import fatwalrus.encryption.KeyGenerator;
+import fatwalrus.network.ClientTimeoutHandler;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.security.KeyFactory;
@@ -36,15 +37,18 @@ public class Client implements Runnable {
     private final KeyGenerator         kg        = new KeyGenerator(2048);
     private final DatagramSocket       socket    = new DatagramSocket();
     private final Semaphore            recLock   = new Semaphore(1);
-    private final ArrayList<byte[]>    recQueue  = new ArrayList();
+    private final ArrayList<byte[]>    recQueue  = new ArrayList<>();
     private final CommandExecutor      executor  = new CommandExecutor();
     private       boolean              connectionEstablished;
     private       PublicKey            serverPublicKey;
+    private final ClientTimeoutHandler to;
     private final ClientSocketListener sl;
     private final SocketWriter         sw;
     private       String               handshake;
     private final String               id;
     private       boolean              isRunning = false;
+    private       long                 lastConnect;
+    private       int                  timeWarn;
     
     public Client(String ip, int port, boolean isEncrypted) throws Exception {
         
@@ -54,6 +58,7 @@ public class Client implements Runnable {
         
         kg.createKeys();        
         
+        to = new ClientTimeoutHandler(this);
         sl = new ClientSocketListener(this, socket);
         sw = new SocketWriter(socket, InetAddress.getByName(ip), port);
         id = ip + ":" + port;
@@ -65,9 +70,11 @@ public class Client implements Runnable {
         System.out.println("Starting Client on address: " + id + "...");
         isRunning = true;
         
+        Thread tt = new Thread(to);
         Thread lt = new Thread(sl);
         Thread ct = new Thread(this);
         
+        tt.start();
         lt.start();
         ct.start();
         
@@ -86,7 +93,7 @@ public class Client implements Runnable {
             e.printStackTrace();
         }
         
-
+        to.stop();
         sl.stop();
         sw.stop();
         socket.close();
@@ -155,7 +162,7 @@ public class Client implements Runnable {
                 checkReceived();
 
 
-                Thread.sleep(500);
+                Thread.sleep(1000);
                 
             }
 
@@ -211,6 +218,8 @@ public class Client implements Runnable {
     }    
     
     public void receiveMessage(byte[] message) {
+        
+        updateConnect();
         
         try {
             
@@ -299,6 +308,24 @@ public class Client implements Runnable {
         sw.write(sendData);
     }
     
+    public void updateConnect() {
+        lastConnect = System.currentTimeMillis();
+        timeWarn    = 0;
+    }
+    
+    public long getLlastConnect() {
+        return lastConnect;
+    }
+    
+    public void timeWarn() {
+        timeWarn++;
+    }
+    
+    public int timeWarning() {
+        return timeWarn;
+    }
+        
+    
     public void onConnect() {
     }
     
@@ -306,6 +333,9 @@ public class Client implements Runnable {
     }
     
     public void onConnectFailed() {
+    }
+    
+    public void onConnectionLost() {
     }
     
     public void onServerStop() {

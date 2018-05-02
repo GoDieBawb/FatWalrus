@@ -22,7 +22,12 @@ public class TestClient {
     
     public static void test() throws Exception {
         
-        Client client = new Client("127.0.1", 9876, true);
+        Client client = new Client("127.0.1", 9876, true) {
+            @Override
+            public void onConnectionLost() {
+                System.out.println("Lost Connection to Server!");
+            }
+        };
         client.start();
         
         String in = "";

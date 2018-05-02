@@ -19,6 +19,7 @@ public class ClientConnectionCommandRegistry extends CommandRegistry {
     public ClientConnectionCommandRegistry(ClientConnection cc) {
         commands.add("DISCONNECT");
         commands.add("CHECKTIME");
+        commands.add("TIMECHECK");
         commands.add("ECHO");
         commands.add("PING");
         this.cc = cc;
@@ -38,6 +39,9 @@ public class ClientConnectionCommandRegistry extends CommandRegistry {
                 break;
             case "CHECKTIME":
                 break;
+            case "TIMECHECK":
+                cc.sendMessage("CHECKTIME".getBytes());
+                break;                
             case "ECHO":
                 System.out.println("ECHOING!");
                 cc.sendMessage(("ECHO_" + args[0]).getBytes());

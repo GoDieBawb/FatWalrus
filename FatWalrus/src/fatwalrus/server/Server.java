@@ -31,7 +31,7 @@ public class Server implements Runnable {
     private final KeyGenerator         kg        = new KeyGenerator(2048);
     private final Semaphore            conLock   = new Semaphore(1);
     private final Semaphore            recLock   = new Semaphore(1);
-    private final ArrayList<byte[]>    recQueue  = new ArrayList();
+    private final ArrayList<byte[]>    recQueue  = new ArrayList<>();
     private final CommandExecutor      executor  = new CommandExecutor();
     private boolean                    isRunning = false;
     private final DatagramSocket       socket;
@@ -40,7 +40,7 @@ public class Server implements Runnable {
     private final int                  port;
     private int                        timeout  = 10;
     
-    private final HashMap<String, ClientConnection> connections = new HashMap();
+    private final HashMap<String, ClientConnection> connections = new HashMap<>();
     
     public Server(int port, boolean isEncrypted) throws Exception {
         

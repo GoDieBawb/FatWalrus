@@ -13,7 +13,7 @@ import java.util.ArrayList;
  */
 public abstract class CommandRegistry {
     
-    protected ArrayList<String> commands = new ArrayList();
+    protected ArrayList<String> commands = new ArrayList<>();
     
     public abstract void run(String commandString);
     

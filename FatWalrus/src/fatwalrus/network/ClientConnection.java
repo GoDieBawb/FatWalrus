@@ -27,7 +27,7 @@ import java.security.spec.X509EncodedKeySpec;
 public class ClientConnection implements Runnable {
     
     private final Server             server;
-    private final ArrayList<byte[]>  recQueue  = new ArrayList();
+    private final ArrayList<byte[]>  recQueue  = new ArrayList<>();
     private final Semaphore          recLock   = new Semaphore(1);
     private final CommandExecutor    executor  = new CommandExecutor();
     private final SocketWriter       sw;

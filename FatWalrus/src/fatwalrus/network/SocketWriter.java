@@ -19,7 +19,7 @@ import java.util.concurrent.Semaphore;
 public class SocketWriter implements Runnable {
     
     private final   DatagramSocket     socket;
-    private final   ArrayList<byte[]>  messageQueue = new ArrayList();
+    private final   ArrayList<byte[]>  messageQueue = new ArrayList<>();
     private final   Semaphore          lock = new Semaphore(1);
     private final   int                port;
     private final   InetAddress        ip;

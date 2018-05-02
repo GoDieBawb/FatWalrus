@@ -19,6 +19,7 @@ public class ClientCommandRegistry extends CommandRegistry {
     public ClientCommandRegistry(Client client) {
         commands.add("PONG");
         commands.add("ECHO");
+        commands.add("CHECKTIME");
         commands.add("TIMECHECK");
         commands.add("SRVSTP");
         this.client = client;
@@ -39,6 +40,8 @@ public class ClientCommandRegistry extends CommandRegistry {
             case "ECHO":
                 System.out.println("RECEIVED: " + args[0]);
                 break;
+            case "CHECKTIME":
+                break;                
             case "TIMECHECK":
                 client.sendMessage("CHECKTIME".getBytes());
                 break;
