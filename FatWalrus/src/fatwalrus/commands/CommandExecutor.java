@@ -16,7 +16,7 @@ public class CommandExecutor {
     private final HashMap<String, CommandRegistry> commands;
     
     public CommandExecutor() {
-        commands = new HashMap();
+        commands = new HashMap<>();
     }
     
     public void Execute(String commandString) {
