@@ -22,14 +22,15 @@ import java.util.concurrent.Semaphore;
  */
 public class ServerSocketListener implements Runnable {
     
-    private final Server             server;
-    private final DatagramSocket     socket;
-    private final PublicKey          publicKey;
-    private final PrivateKey         privateKey;
-    private final Semaphore          conLock;
-    private final HashMap<String, ClientConnection> connections;
-    private boolean go = true;
+    private final Server             server; //Server that this listener belongs to
+    private final DatagramSocket     socket; //Socket to be listened on
+    private final PublicKey          publicKey; //The server's public key
+    private final PrivateKey         privateKey; //The server's private key
+    private final Semaphore          conLock; //Semaphore for connections HashMap
+    private final HashMap<String, ClientConnection> connections; //Contains connection id and connection
+    private boolean go = true; //Determines whether to keep listening
     
+    //Pass in parameters and set final fields on construct
     public ServerSocketListener(Server server, HashMap<String, ClientConnection> connections, KeyGenerator kg, Semaphore conLock) {
         this.server       = server;
         this.socket       = server.getSocket();
@@ -39,20 +40,26 @@ public class ServerSocketListener implements Runnable {
         this.conLock      = conLock;
     }
     
+    //Stop listening
     public void stop() {
         go = false;
     }
     
+    //Listens and addresses multiple connections to the server
     @Override
     public void run() {
         
+        //Set basic receive data buffer size
         byte[] receiveData  = new byte[2048];
         
+        //While the server is still running
         while (go) {
 
+            //Construct packet to be received
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
             try {
+                //Wait to receive packet
                 socket.receive(receivePacket);
             }
             catch (Exception e) {
@@ -62,18 +69,22 @@ public class ServerSocketListener implements Runnable {
             
             try {
 
+                //Get connection information from packet and construct ID
                 InetAddress ip   = receivePacket.getAddress();
                 int         port = receivePacket.getPort();
                 String      key  = ip + ":" + port;
                 
+                //Declare Client Connection
                 ClientConnection cc;
                 
                 conLock.acquire();
                 
+                //If connection already exists get existing connection
                 if (connections.containsKey(key)) {
                     cc = connections.get(key);
                 }
                 
+                //If client does not exist construct ClientConnection and add to Connection map
                 else {
                     
                     if (port == -1) continue;
@@ -86,6 +97,7 @@ public class ServerSocketListener implements Runnable {
                 }
                 conLock.release();
                 
+                //Create formatted byte array and send message to client handler
                 byte[] recMess = Arrays.copyOf(receivePacket.getData(), receivePacket.getLength());
                 cc.receiveMessage(recMess);
                 

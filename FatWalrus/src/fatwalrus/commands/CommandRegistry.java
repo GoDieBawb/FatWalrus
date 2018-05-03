@@ -13,10 +13,12 @@ import java.util.ArrayList;
  */
 public abstract class CommandRegistry {
     
-    protected ArrayList<String> commands = new ArrayList<>();
+    protected ArrayList<String> commands = new ArrayList<>(); //List of Strings containing commands
     
+    //Runs command string if registered with this command registry
     public abstract void run(String commandString);
     
+    //Returns the list of commands
     public ArrayList<String> getCommands() {
         return commands;
     }

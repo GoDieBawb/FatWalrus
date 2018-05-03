@@ -16,29 +16,36 @@ import java.util.Arrays;
  */
 public class ClientSocketListener implements Runnable {
     
-    private final   DatagramSocket  socket;
-    private final   Client          client;
-    private boolean                 go = true;
-    
+    private final   DatagramSocket  socket; //Client's socket
+    private final   Client          client; //Client itself
+    private boolean                 go = true; //Determines whether to continue loop
+ 
+    //Set finals fields on construct
     public ClientSocketListener(Client client, DatagramSocket socket) {
         this.client = client;
         this.socket = socket;
     }
     
+    //Stop Socket Listener
     public void stop() {
         go = false;
     }
     
+    //Starts listening for messages on the socket
     @Override
     public void run() {
         
+        //Set basic receive data buffer size
         byte[] receiveData  = new byte[2048];
         
+        //While client is running
         while (go) {
 
+            //Construct new receive packet
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
             try {
+                //Wait for packet received
                 socket.receive(receivePacket);
             }
             catch (Exception e) {
@@ -47,6 +54,7 @@ public class ClientSocketListener implements Runnable {
             }
             
             try {
+                //Create formatted byte array and send message to client
                 byte[] recMess = Arrays.copyOf(receivePacket.getData(), receivePacket.getLength());
                 client.receiveMessage(recMess);
             }

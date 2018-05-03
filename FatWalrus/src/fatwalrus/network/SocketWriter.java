@@ -18,19 +18,21 @@ import java.util.concurrent.Semaphore;
  */
 public class SocketWriter implements Runnable {
     
-    private final   DatagramSocket     socket;
-    private final   ArrayList<byte[]>  messageQueue = new ArrayList<>();
-    private final   Semaphore          lock = new Semaphore(1);
-    private final   int                port;
-    private final   InetAddress        ip;
+    private final   DatagramSocket     socket; //The socket that is being written to
+    private final   ArrayList<byte[]>  messageQueue = new ArrayList<>(); //Queue of messages to be sent
+    private final   Semaphore          lock = new Semaphore(1); //Lock for message queue
+    private final   int                port; //Port to write to
+    private final   InetAddress        ip; //Ip to write to
     private boolean go = true;
     
+    //Set final fields on construct
     public SocketWriter(DatagramSocket socket, InetAddress ip, int port) {
         this.socket       = socket;
         this.port         = port;
         this.ip           = ip;
     }    
 
+    //Writes a message to the SocketWriter's message queue and starts a new thread
     public void write(byte[] message) {
         try {
             lock.acquire();
@@ -41,35 +43,16 @@ public class SocketWriter implements Runnable {
             lock.release();
             e.printStackTrace();
         }
+        //Write the message on a new thread
         new Thread(this).start();
     }
     
-    private byte[] readMessageQueue(ArrayList<byte[]> messageQueue, Semaphore lock) {
-        
-        byte[] message = null;
-        
-        try {
-            lock.acquire();
-            if (!messageQueue.isEmpty()) {
-                message = messageQueue.get(0);
-                messageQueue.remove(0);
-            }
-            lock.release();
-        }
-        
-        catch(Exception e) {
-            lock.release();
-            e.printStackTrace();
-        }
-        
-        return message;
-        
-    } 
-    
+    //Stops the socket writer
     public void stop() {
         go = false;
     }    
     
+    //Starts a thread and writes the first message in the queue to the socket and removes it
     @Override
     public void run() {
         
@@ -91,5 +74,28 @@ public class SocketWriter implements Runnable {
         }
             
     }
+    
+    //Synchronized read from the writer's message queue
+    private byte[] readMessageQueue(ArrayList<byte[]> messageQueue, Semaphore lock) {
+        
+        byte[] message = null;
+        
+        try {
+            lock.acquire();
+            if (!messageQueue.isEmpty()) {
+                message = messageQueue.get(0);
+                messageQueue.remove(0);
+            }
+            lock.release();
+        }
+        
+        catch(Exception e) {
+            lock.release();
+            e.printStackTrace();
+        }
+        
+        return message;
+        
+    }     
     
 }
